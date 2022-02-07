@@ -116,30 +116,127 @@
        data(){
            return{
                editmode: false,
+               users:{},
                form: new Form({
+                   id:'',
                    name: '',
                    email: '',
                    password: '',
                    type: '',
                    status: '',
+                   created_at:''
                })
            }
        },
 
        methods:{
+           loadUsers(){
+               this.$Progress.start();
+
+               if(this.$gate.isAdmin()){
+                   axios.get("api/user").then(({ data}) => (this.users = data.data));
+               }
+
+               this.$Progress.finish();
+           },
+
            createUser(){
+               this.$Progress.start();
                this.form.post('api/user')
                .then((response) => {
-                   $('#addNew').modal('hide');
+                   addNew.hide();
+                   Toast.fire({
+                        icon: 'success',
+                        title: 'User Created Successfully'
+                        })
+                   this.$Progress.finish();
                })
            },
 
            updateUser(){
+
+               this.$Progress.start();
                this.form.put('api/user/'+this.form.id)
                .then((response) => {
-                   $('#addNew').modal('hide');
+                   addNew.hide();
+                   Toast.fire({
+                        icon: 'success',
+                        title: response.data.message
+                        });
+                        this.$Progress.finish();
+                        this.loadUsers();
+               })
+               .catch(()=>{
+                   this.$Progress.fail();
+               });
+           },
+
+           editModal(user){
+               this.editmode = true;
+               this.form.reset();
+               addNew.show();
+               this.form.fill(user);
+           },
+
+           newModal(){
+               this.editmode = false;
+               this.form.reset();
+               addNew.show();
+           },
+
+           deleteUser(id){
+               Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You cannot change this later!",
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+
+                         if (result.value) {
+                                this.form.delete('api/user/'+id).then(()=>{
+                                        Swal.fire(
+                                        'Deleted!',
+                                        'Your file has been deleted.',
+                                        'success'
+                                        );
+
+                                    this.loadUsers();
+                                }).catch((data)=> {
+                                  Swal.fire("Failed!", data.message, "warning");
+                              });
+                         }
                })
            }
+       },
+
+       mounted(){
+           console.log('User Component Mounted..')
+       },
+
+       created(){
+           this.$Progress.start();
+           this.loadUsers();
+           this.$Progress.finish();
+
+           this.$Progress.start();
+           Fire.$on('searching',()=>{
+               let query = this.$parent.search;
+               axios.get('aoi/search?q=' + query)
+               .then((data)=>{
+                   this.users = data.data
+               })
+               .catch(()=>{
+
+               })
+           })
+           this.loadUsers();
+           Fire.$on('AfterCreate',()=>{
+               this.loadUsers();
+           });
+
+           this.$Progress.finish();
        }
     }
 </script>
