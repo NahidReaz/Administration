@@ -115,6 +115,7 @@
     export default {
        data(){
            return{
+               editmode: false,
                form: new Form({
                    name: '',
                    email: '',
@@ -128,10 +129,16 @@
        methods:{
            createUser(){
                this.form.post('api/user')
+               .then((response) => {
+                   $('#addNew').modal('hide');
+               })
            },
 
            updateUser(){
-
+               this.form.put('api/user/'+this.form.id)
+               .then((response) => {
+                   $('#addNew').modal('hide');
+               })
            }
        }
     }
